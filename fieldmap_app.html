@@ -816,7 +816,7 @@
 // ============================================================
 // 設定（GASのURLをここに貼り付ける）
 // ============================================================
-const GAS_URL = 'YOUR_GAS_URL_HERE';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec';
 
 // ============================================================
 // サンプルデータ（GAS連携前のデモ用）
@@ -880,7 +880,7 @@ function initMap() {
 }
 
 async function loadData() {
-  if (GAS_URL === 'YOUR_GAS_URL_HERE') {
+  if (GAS_URL === 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec') {
     properties = SAMPLE_DATA;
     showToast('📋 デモデータを表示中（GAS未連携）');
   } else {
@@ -1008,7 +1008,7 @@ async function submitVisit() {
     photoUrl:  document.getElementById('visit-photo').value,
   };
 
-  if (GAS_URL === 'YOUR_GAS_URL_HERE') {
+  if (GAS_URL === 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec') {
     // デモ：ローカル更新のみ
     const p = properties.find(x => x.id === currentProperty.id);
     if (p) {
@@ -1065,7 +1065,7 @@ async function submitAdd() {
     memo:      document.getElementById('add-memo').value,
   };
 
-  if (GAS_URL === 'YOUR_GAS_URL_HERE') {
+  if (GAS_URL === 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec') {
     const newId = 'P-' + String(properties.length + 1).padStart(3,'0');
     properties.push({ ...property, id: newId, lastVisit:'', nextVisit:'', photoUrl:'' });
     renderMarkers();
