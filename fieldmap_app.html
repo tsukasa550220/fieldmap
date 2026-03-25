@@ -691,11 +691,11 @@
       </div>
 
       <div class="form-section">位置情報</div>
-      <button id="gps-btn" onclick="getLocation()">
+      <button id="gps-btn" onclick="geocodeAddress()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-        現在地を取得
+        住所からピン位置を取得
       </button>
-      <div id="lat-lng-display">緯度・経度が自動で入力されます</div>
+      <div id="lat-lng-display">「住所からピン位置を取得」を押してください</div>
       <input type="hidden" id="add-lat">
       <input type="hidden" id="add-lng">
 
@@ -816,7 +816,7 @@
 // ============================================================
 // 設定（GASのURLをここに貼り付ける）
 // ============================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec';
+const GAS_URL = 'YOUR_GAS_URL_HERE';
 
 // ============================================================
 // サンプルデータ（GAS連携前のデモ用）
@@ -1048,8 +1048,8 @@ async function submitAdd() {
   const name = document.getElementById('add-name').value.trim();
   const lat  = document.getElementById('add-lat').value;
   const lng  = document.getElementById('add-lng').value;
-  if (!name)     return showToast('⚠️ 物件名・住所は必須です');
-  if (!lat||!lng) return showToast('⚠️ 現在地を取得してください');
+  if (!name) return showToast('⚠️ 物件名・住所は必須です');
+  if (!lat||!lng) return showToast('⚠️「住所からピン位置を取得」を押してください');
 
   const property = {
     name,
@@ -1096,27 +1096,53 @@ function clearAddForm() {
     const el = document.getElementById(id);
     if (el) el.value = (id === 'add-status') ? '未訪問' : '';
   });
-  document.getElementById('lat-lng-display').textContent = '緯度・経度が自動で入力されます';
+  document.getElementById('lat-lng-display').textContent = '「住所からピン位置を取得」を押してください';
+  const gpsbtn = document.getElementById('gps-btn');
+  gpsbtn.textContent = '住所からピン位置を取得';
+  gpsbtn.style.color = '';
+  gpsbtn.disabled = false;
 }
 
 // ============================================================
-// GPS取得
+// 住所→緯度経度変換（ジオコーディング）
 // ============================================================
-function getLocation() {
+async function geocodeAddress() {
+  const name = document.getElementById('add-name').value.trim();
+  if (!name) return showToast('⚠️ 先に物件名・住所を入力してください');
+
   const btn = document.getElementById('gps-btn');
-  btn.textContent = '取得中...';
-  navigator.geolocation.getCurrentPosition(pos => {
-    const lat = pos.coords.latitude.toFixed(6);
-    const lng = pos.coords.longitude.toFixed(6);
+  btn.textContent = '変換中...';
+  btn.disabled = true;
+
+  try {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1&countrycodes=jp`,
+      { headers: { 'Accept-Language': 'ja' } }
+    );
+    const data = await res.json();
+
+    if (data.length === 0) {
+      showToast('⚠️ 住所が見つかりませんでした。より詳しい住所を入力してください');
+      btn.textContent = '住所からピン位置を取得';
+      btn.disabled = false;
+      return;
+    }
+
+    const lat = parseFloat(data[0].lat).toFixed(6);
+    const lng = parseFloat(data[0].lon).toFixed(6);
     document.getElementById('add-lat').value = lat;
     document.getElementById('add-lng').value = lng;
-    document.getElementById('lat-lng-display').textContent = `📍 緯度:${lat} 経度:${lng}`;
+    document.getElementById('lat-lng-display').textContent = `📍 位置を取得しました（${data[0].display_name.slice(0,30)}...）`;
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 取得完了';
     btn.style.color = 'var(--green-mid)';
-  }, () => {
-    showToast('⚠️ 位置情報の取得に失敗しました');
-    btn.innerHTML = '現在地を取得';
-  });
+    btn.disabled = false;
+    showToast('✅ 住所の位置を取得しました');
+  } catch(e) {
+    showToast('⚠️ 位置の取得に失敗しました。ネット接続を確認してください');
+    btn.textContent = '住所からピン位置を取得';
+    btn.disabled = false;
+  }
 }
 
 function locateMe() {
