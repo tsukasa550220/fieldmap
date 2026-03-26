@@ -880,7 +880,7 @@ function initMap() {
 }
 
 async function loadData() {
-  if (GAS_URL === 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec') {
+  if (GAS_URL === 'YOUR_GAS_URL_HERE') {
     properties = SAMPLE_DATA;
     showToast('📋 デモデータを表示中（GAS未連携）');
   } else {
@@ -1008,7 +1008,7 @@ async function submitVisit() {
     photoUrl:  document.getElementById('visit-photo').value,
   };
 
-  if (GAS_URL === 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec') {
+  if (GAS_URL === 'YOUR_GAS_URL_HERE') {
     // デモ：ローカル更新のみ
     const p = properties.find(x => x.id === currentProperty.id);
     if (p) {
@@ -1025,10 +1025,14 @@ async function submitVisit() {
     showToast('✅ 保存しました（デモ）');
   } else {
     try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action:'updateVisit', id: currentProperty.id, visitData }),
+      const vParams = new URLSearchParams({
+        action: 'updateVisit',
+        id: currentProperty.id,
+        data: JSON.stringify(visitData),
       });
+      const vRes = await fetch(GAS_URL + '?' + vParams.toString());
+      const vJson = await vRes.json();
+      if (vJson.error) throw new Error(vJson.error);
       await loadData();
       closeVisit();
       showToast('✅ スプレッドシートに保存しました');
@@ -1065,7 +1069,7 @@ async function submitAdd() {
     memo:      document.getElementById('add-memo').value,
   };
 
-  if (GAS_URL === 'https://script.google.com/macros/s/AKfycbyRvxS-vojpnEUgK1x3XF8cga5x2zd0PAFEelrox4S6scUtxP3YdprBP3xls8HRTDhO/exec') {
+  if (GAS_URL === 'YOUR_GAS_URL_HERE') {
     const newId = 'P-' + String(properties.length + 1).padStart(3,'0');
     properties.push({ ...property, id: newId, lastVisit:'', nextVisit:'', photoUrl:'' });
     renderMarkers();
@@ -1075,16 +1079,19 @@ async function submitAdd() {
     showToast('✅ 物件を追加しました（デモ）');
   } else {
     try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action:'add', property }),
+      const params = new URLSearchParams({
+        action: 'add',
+        data: JSON.stringify(property),
       });
+      const res = await fetch(GAS_URL + '?' + params.toString());
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
       await loadData();
       clearAddForm();
       switchTab('map');
       showToast('✅ スプレッドシートに保存しました');
     } catch(e) {
-      showToast('❌ 追加に失敗しました');
+      showToast('❌ 追加に失敗しました: ' + e.message);
     }
   }
 }
@@ -1117,23 +1124,24 @@ async function geocodeAddress() {
   try {
     const encoded = encodeURIComponent(name);
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1&countrycodes=jp`,
-      { headers: { 'Accept-Language': 'ja' } }
+      `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encoded}`
     );
     const data = await res.json();
 
-    if (data.length === 0) {
-      showToast('⚠️ 住所が見つかりませんでした。より詳しい住所を入力してください');
+    if (!data || data.length === 0) {
+      showToast('⚠️ 住所が見つかりませんでした。都道府県から入力してください');
       btn.textContent = '住所からピン位置を取得';
       btn.disabled = false;
       return;
     }
 
-    const lat = parseFloat(data[0].lat).toFixed(6);
-    const lng = parseFloat(data[0].lon).toFixed(6);
+    const coords = data[0].geometry.coordinates;
+    const lng = parseFloat(coords[0]).toFixed(6);
+    const lat = parseFloat(coords[1]).toFixed(6);
     document.getElementById('add-lat').value = lat;
     document.getElementById('add-lng').value = lng;
-    document.getElementById('lat-lng-display').textContent = `📍 位置を取得しました（${data[0].display_name.slice(0,30)}...）`;
+    const address = data[0].properties.title || name;
+    document.getElementById('lat-lng-display').textContent = `📍 ${address}`;
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 取得完了';
     btn.style.color = 'var(--green-mid)';
     btn.disabled = false;
