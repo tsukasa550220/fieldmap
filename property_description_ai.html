@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI物件説明文ジェネレーター</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --gold: #c9a84c;
+  --gold2: #e8c97a;
+  --text: #f0ede8;
+  --text2: #9b98a3;
+  --text3: #6b6875;
+  --green: #2d6a4f;
+  --green2: #52b788;
+  --red: #e63946;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+}
+
+#app { max-width: 680px; margin: 0 auto; padding: 0 0 80px; }
+
+#header {
+  padding: 20px 20px 0;
+  margin-bottom: 24px;
+}
+#header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+#header h1 span {
+  font-size: 11px;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #1a1400;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: .05em;
+}
+#header p {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.section { padding: 0 20px; margin-bottom: 20px; }
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-grid.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: 11px; color: var(--text2); }
+.form-control {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+.form-control:focus { border-color: var(--gold); }
+.form-control::placeholder { color: var(--text3); }
+select.form-control { appearance: none; cursor: pointer; }
+textarea.form-control { resize: none; line-height: 1.6; }
+
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--gold); color: var(--gold); }
+.chip.active {
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border-color: transparent;
+  color: #1a1400;
+  font-weight: 700;
+}
+
+.generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 40px);
+  margin: 0 20px 20px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #1a1400;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: .03em;
+  transition: opacity .15s, transform .1s;
+}
+.generate-btn:active { transform: scale(0.98); }
+.generate-btn:disabled { opacity: .5; cursor: not-allowed; }
+.generate-btn svg { width: 18px; height: 18px; }
+
+#result-section { padding: 0 20px; display: none; }
+.result-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.rtab {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+}
+.rtab.active {
+  background: var(--surface2);
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  display: none;
+}
+.result-card.active { display: block; }
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.result-meta { display: flex; gap: 8px; align-items: center; }
+.result-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(201,168,76,0.15);
+  color: var(--gold2);
+  letter-spacing: .05em;
+}
+.char-count { font-size: 11px; color: var(--text3); }
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text2);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+}
+.copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+.copy-btn.copied { border-color: var(--green2); color: var(--green2); }
+.copy-btn svg { width: 13px; height: 13px; }
+.result-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.result-limit {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.limit-bar {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.limit-fill {
+  height: 100%;
+  background: var(--green2);
+  border-radius: 2px;
+  transition: width .3s;
+}
+.limit-fill.over { background: var(--red); }
+
+.loading-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: dot .8s infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: .15s; }
+.loading-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes dot {
+  0%,80%,100% { opacity: .2; transform: scale(.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+.regen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 42px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text2);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+  margin-top: 8px;
+}
+.regen-btn:hover { border-color: var(--gold); color: var(--gold); }
+.regen-btn svg { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <h1>AI物件説明文 <span>AI搭載</span></h1>
+    <p>物件情報を入力するだけで、媒体別の説明文を自動生成します</p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">物件基本情報</div>
+    <div class="form-grid" style="margin-bottom:10px">
+      <div class="form-group">
+        <label class="form-label">物件種別</label>
+        <select class="form-control" id="prop-type">
+          <option value="">選択してください</option>
+          <option>空き家（戸建て）</option>
+          <option>売地</option>
+          <option>中古戸建て</option>
+          <option>新築戸建て</option>
+          <option>中古マンション</option>
+          <option>収益物件</option>
+          <option>古民家</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">築年数</label>
+        <input class="form-control" id="prop-age" placeholder="例：築35年" type="text">
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:10px">
+      <div class="form-group">
+        <label class="form-label">所在地（エリア）</label>
+        <input class="form-control" id="prop-location" placeholder="例：沖縄県那覇市" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">価格・賃料</label>
+        <input class="form-control" id="prop-price" placeholder="例：1,200万円" type="text">
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:10px">
+      <div class="form-group">
+        <label class="form-label">広さ・間取り</label>
+        <input class="form-control" id="prop-size" placeholder="例：3LDK・85㎡" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">構造</label>
+        <input class="form-control" id="prop-structure" placeholder="例：木造2階建て" type="text">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">アピールポイント・特徴（自由入力）</label>
+      <textarea class="form-control" id="prop-features" rows="3" placeholder="例：南向き・駅徒歩5分・庭付き・リフォーム済み・閑静な住宅街・投資利回り8%など"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">出力媒体</div>
+    <div class="chip-group" id="media-chips">
+      <button class="chip active" data-val="suumo">SUUMO（200字）</button>
+      <button class="chip active" data-val="athome">at home（150字）</button>
+      <button class="chip active" data-val="flyer">チラシ・資料用</button>
+      <button class="chip active" data-val="sns">LINE・SNS用</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">文章トーン</div>
+    <div class="chip-group" id="tone-chips">
+      <button class="chip active" data-val="pro">プロ・投資家向け</button>
+      <button class="chip active" data-val="impact">第一印象重視</button>
+      <button class="chip" data-val="friendly">フレンドリー</button>
+      <button class="chip" data-val="formal">丁寧・落ち着いた</button>
+    </div>
+  </div>
+
+  <button class="generate-btn" id="gen-btn" onclick="generate()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    AIで説明文を生成する
+  </button>
+
+  <div id="result-section">
+    <div class="section-label" style="padding:0 0 10px">生成結果</div>
+    <div class="result-tabs" id="result-tabs"></div>
+    <div id="result-cards"></div>
+    <button class="regen-btn" onclick="generate()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      別のパターンで再生成
+    </button>
+  </div>
+</div>
+
+<script>
+const MEDIA_CONFIG = {
+  suumo:   { label:'SUUMO',       limit:200, badge:'SUUMO 200字' },
+  athome:  { label:'at home',     limit:150, badge:'at home 150字' },
+  flyer:   { label:'チラシ・資料', limit:400, badge:'チラシ・資料' },
+  sns:     { label:'LINE・SNS',   limit:100, badge:'LINE・SNS' },
+};
+
+const TONE_CONFIG = {
+  pro:      'プロフェッショナル・投資家向けの冷静で数字を重視したトーン',
+  impact:   '第一印象を重視した、思わず読みたくなるインパクトのあるトーン',
+  friendly: '親しみやすくフレンドリーで、読者に寄り添うトーン',
+  formal:   '丁寧で落ち着いた、信頼感のある品のあるトーン',
+};
+
+let activeMedia = new Set(['suumo','athome','flyer','sns']);
+let activeTones = new Set(['pro','impact']);
+let results = {};
+
+document.querySelectorAll('#media-chips .chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const val = btn.dataset.val;
+    if (activeMedia.has(val)) {
+      if (activeMedia.size > 1) { activeMedia.delete(val); btn.classList.remove('active'); }
+    } else {
+      activeMedia.add(val); btn.classList.add('active');
+    }
+  });
+});
+
+document.querySelectorAll('#tone-chips .chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const val = btn.dataset.val;
+    if (activeTones.has(val)) {
+      if (activeTones.size > 1) { activeTones.delete(val); btn.classList.remove('active'); }
+    } else {
+      activeTones.add(val); btn.classList.add('active');
+    }
+  });
+});
+
+async function generate() {
+  const type      = document.getElementById('prop-type').value;
+  const age       = document.getElementById('prop-age').value;
+  const location  = document.getElementById('prop-location').value;
+  const price     = document.getElementById('prop-price').value;
+  const size      = document.getElementById('prop-size').value;
+  const structure = document.getElementById('prop-structure').value;
+  const features  = document.getElementById('prop-features').value;
+
+  if (!type && !location && !features) {
+    alert('物件種別・所在地・アピールポイントのいずれかを入力してください');
+    return;
+  }
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="loading-dots"><span></span><span></span><span></span></div>`;
+
+  const rs = document.getElementById('result-section');
+  rs.style.display = 'block';
+  document.getElementById('result-tabs').innerHTML = '';
+  document.getElementById('result-cards').innerHTML = `<div class="loading-dots"><span></span><span></span><span></span></div>`;
+
+  const propInfo = [
+    type && `種別：${type}`,
+    age && `築年数：${age}`,
+    location && `所在地：${location}`,
+    price && `価格：${price}`,
+    size && `広さ・間取り：${size}`,
+    structure && `構造：${structure}`,
+    features && `特徴・アピールポイント：${features}`,
+  ].filter(Boolean).join('\n');
+
+  const mediaList = [...activeMedia].map(m => {
+    const c = MEDIA_CONFIG[m];
+    return `・${c.label}（${c.limit}文字以内）`;
+  }).join('\n');
+
+  const toneList = [...activeTones].map(t => TONE_CONFIG[t]).join('、');
+
+  const prompt = `あなたは不動産のプロのコピーライターです。以下の物件情報をもとに、各媒体向けの物件説明文を生成してください。
+
+【物件情報】
+${propInfo}
+
+【出力する媒体と文字数制限】
+${mediaList}
+
+【文章のトーン】
+${toneList}
+
+【出力形式】
+必ず以下のJSON形式のみで返してください。前置きや説明文は一切不要です。
+{
+${[...activeMedia].map(m => `  "${m}": "（${MEDIA_CONFIG[m].label}向けの説明文）"`).join(',\n')}
+}
+
+【重要なルール】
+- 各媒体の文字数制限を厳守してください
+- 実在しない情報は絶対に追加しないこと
+- 日本語で自然な不動産広告文として書くこと
+- JSONのみ返すこと（コードブロック不要）`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    const data = await response.json();
+    const text = data.content.map(c => c.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    results = JSON.parse(clean);
+    renderResults();
+  } catch(e) {
+    document.getElementById('result-cards').innerHTML = `
+      <div style="text-align:center;padding:30px;color:#e63946;font-size:13px;">
+        生成に失敗しました。もう一度お試しください。<br>
+        <small style="color:#6b6875;margin-top:4px;display:block;">${e.message}</small>
+      </div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> AIで説明文を生成する`;
+}
+
+function renderResults() {
+  const mediaArr = [...activeMedia];
+  const tabs = document.getElementById('result-tabs');
+  const cards = document.getElementById('result-cards');
+
+  tabs.innerHTML = mediaArr.map((m, i) =>
+    `<button class="rtab ${i===0?'active':''}" onclick="switchTab('${m}')" id="tab-${m}">${MEDIA_CONFIG[m].label}</button>`
+  ).join('');
+
+  cards.innerHTML = mediaArr.map((m, i) => {
+    const text = results[m] || '';
+    const limit = MEDIA_CONFIG[m].limit;
+    const len = text.length;
+    const pct = Math.min(100, Math.round(len / limit * 100));
+    const over = len > limit;
+    return `
+    <div class="result-card ${i===0?'active':''}" id="card-${m}">
+      <div class="result-header">
+        <div class="result-meta">
+          <span class="result-badge">${MEDIA_CONFIG[m].badge}</span>
+          <span class="char-count">${len}字</span>
+        </div>
+        <button class="copy-btn" id="copy-${m}" onclick="copyText('${m}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          コピー
+        </button>
+      </div>
+      <div class="result-text" id="text-${m}">${text}</div>
+      <div class="result-limit">
+        <span>${len}/${limit}字</span>
+        <div class="limit-bar"><div class="limit-fill ${over?'over':''}" style="width:${pct}%"></div></div>
+        ${over ? '<span style="color:var(--red)">超過</span>' : '<span style="color:var(--green2)">OK</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(m) {
+  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.result-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+m)?.classList.add('active');
+  document.getElementById('card-'+m)?.classList.add('active');
+}
+
+function copyText(m) {
+  const text = document.getElementById('text-'+m)?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-'+m);
+    btn.classList.add('copied');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> コピー済み`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> コピー`;
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>
