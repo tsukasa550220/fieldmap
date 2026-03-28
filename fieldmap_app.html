@@ -753,9 +753,9 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         電話
       </button>
-      <button class="panel-action-btn" id="btn-map-open" onclick="openInMaps()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/></svg>
-        地図で開く
+      <button class="panel-action-btn" onclick="openEditForm()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        編集
       </button>
       <button class="panel-action-btn primary" onclick="openVisitForm()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -808,6 +808,86 @@
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
   この物件を登録する
 </button>
+
+<!-- 物件編集フォーム（ボトムシート） -->
+<div id="edit-overlay" onclick="closeEditOnBg(event)" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:flex-end;">
+  <div id="edit-sheet" style="width:100%;background:var(--white);border-radius:20px 20px 0 0;padding:14px 16px 30px;max-height:90dvh;overflow-y:auto;position:relative;">
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;text-align:center;">物件情報を編集</div>
+    <button onclick="closeEdit()" style="position:absolute;right:16px;top:14px;background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;line-height:1;">✕</button>
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">物件名・住所</label>
+      <input class="form-control" id="edit-name" type="text">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div class="form-group">
+        <label class="form-label">物件種別</label>
+        <select class="form-control" id="edit-type">
+          <option value="">選択</option>
+          <option>空き家</option>
+          <option>売地</option>
+          <option>収益物件</option>
+          <option>その他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ステータス</label>
+        <select class="form-control" id="edit-status">
+          <option>未訪問</option>
+          <option>訪問済</option>
+          <option>商談中</option>
+          <option>成約</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div class="form-group">
+        <label class="form-label">築年数</label>
+        <input class="form-control" id="edit-age" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">建物情報</label>
+        <input class="form-control" id="edit-building" type="text">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div class="form-group">
+        <label class="form-label">所有者名</label>
+        <input class="form-control" id="edit-owner-name" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">所有者連絡先</label>
+        <input class="form-control" id="edit-owner-tel" type="tel">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div class="form-group">
+        <label class="form-label">担当者名</label>
+        <input class="form-control" id="edit-assigned" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">次回訪問予定日</label>
+        <input class="form-control" id="edit-next-visit" type="date">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label class="form-label">写真URL（Google Drive）</label>
+      <input class="form-control" id="edit-photo" type="url" placeholder="https://drive.google.com/...">
+    </div>
+    <div class="form-group voice-wrap" style="margin-bottom:10px;">
+      <label class="form-label">メモ（音声入力可）</label>
+      <textarea class="form-control" id="edit-memo" rows="3" style="padding-right:48px;"></textarea>
+      <button class="voice-btn" id="voice-btn-edit" onclick="startVoice('edit-memo','voice-btn-edit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+    </div>
+
+    <button id="edit-submit" onclick="submitEdit()" style="width:100%;height:50px;background:var(--green-mid);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      変更を保存する
+    </button>
+  </div>
+</div>
 
 <!-- トースト -->
 <div id="toast"></div>
@@ -1094,6 +1174,83 @@ async function submitAdd() {
       showToast('❌ 追加に失敗しました: ' + e.message);
     }
   }
+}
+
+// ============================================================
+// 物件編集フォーム
+// ============================================================
+function openEditForm() {
+  if (!currentProperty) return;
+  const p = currentProperty;
+  document.getElementById('edit-name').value       = p.name || '';
+  document.getElementById('edit-type').value       = p.type || '';
+  document.getElementById('edit-status').value     = p.status || '未訪問';
+  document.getElementById('edit-age').value        = p.age || '';
+  document.getElementById('edit-building').value   = p.building || '';
+  document.getElementById('edit-owner-name').value = p.ownerName || '';
+  document.getElementById('edit-owner-tel').value  = p.ownerTel || '';
+  document.getElementById('edit-assigned').value   = p.assigned || '';
+  document.getElementById('edit-next-visit').value = p.nextVisit || '';
+  document.getElementById('edit-photo').value      = p.photoUrl || '';
+  document.getElementById('edit-memo').value       = p.memo || '';
+  document.getElementById('edit-overlay').style.display = 'flex';
+}
+
+function closeEdit() {
+  document.getElementById('edit-overlay').style.display = 'none';
+}
+
+function closeEditOnBg(e) {
+  if (e.target === document.getElementById('edit-overlay')) closeEdit();
+}
+
+async function submitEdit() {
+  if (!currentProperty) return;
+  const btn = document.getElementById('edit-submit');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+
+  const fields = {
+    name:      document.getElementById('edit-name').value,
+    type:      document.getElementById('edit-type').value,
+    status:    document.getElementById('edit-status').value,
+    age:       document.getElementById('edit-age').value,
+    building:  document.getElementById('edit-building').value,
+    ownerName: document.getElementById('edit-owner-name').value,
+    ownerTel:  document.getElementById('edit-owner-tel').value,
+    assigned:  document.getElementById('edit-assigned').value,
+    nextVisit: document.getElementById('edit-next-visit').value,
+    photoUrl:  document.getElementById('edit-photo').value,
+    memo:      document.getElementById('edit-memo').value,
+  };
+
+  const p = properties.find(x => x.id === currentProperty.id);
+  if (p) Object.assign(p, fields);
+  currentProperty = { ...currentProperty, ...fields };
+
+  if (GAS_URL !== 'YOUR_GAS_URL_HERE') {
+    try {
+      const params = new URLSearchParams({
+        action: 'update',
+        id: currentProperty.id,
+        data: JSON.stringify(fields),
+      });
+      await fetch(GAS_URL + '?' + params.toString());
+      await loadData();
+      showToast('✅ スプレッドシートに保存しました');
+    } catch(e) {
+      showToast('❌ 保存に失敗しました');
+    }
+  } else {
+    renderMarkers();
+    renderList();
+    showToast('✅ 編集しました（デモ）');
+  }
+
+  closeEdit();
+  openPanel(currentProperty);
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 変更を保存する';
 }
 
 function clearAddForm() {
