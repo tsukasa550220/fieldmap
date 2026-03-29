@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建設業界 需要探索ツール</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f4f0; color: #1a1a18; min-height: 100vh; }
+  .header { background: #1a1a18; color: #f5f4f0; padding: 18px 24px; }
+  .header h1 { font-size: 18px; font-weight: 500; }
+  .header p { font-size: 12px; color: #888; margin-top: 4px; }
+  .container { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+
+  .tab-row { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab { padding: 7px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid #ccc; color: #666; background: #fff; transition: all .15s; }
+  .tab.active { background: #1a1a18; color: #f5f4f0; border-color: transparent; }
+
+  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #e8e6e0; }
+
+  textarea {
+    width: 100%; min-height: 150px; border-radius: 8px;
+    border: 1px solid #ddd; background: #fafaf8;
+    color: #1a1a18; font-size: 14px; padding: 12px;
+    resize: vertical; line-height: 1.6; font-family: inherit;
+  }
+  textarea:focus { outline: none; border-color: #888; }
+  textarea::placeholder { color: #bbb; }
+
+  .kw-input { width: 100%; border-radius: 8px; border: 1px solid #ddd; background: #fafaf8; color: #1a1a18; font-size: 14px; padding: 10px 14px; font-family: inherit; }
+  .kw-input:focus { outline: none; border-color: #888; }
+  .kw-input::placeholder { color: #bbb; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #f0ede6; color: #555; cursor: pointer; border: 1px solid #e0ddd6; transition: all .1s; }
+  .chip:hover { background: #e8e4dc; color: #1a1a18; }
+
+  .analyze-btn {
+    width: 100%; padding: 13px;
+    background: #1a1a18; color: #f5f4f0;
+    border: none; border-radius: 8px; font-size: 15px; font-weight: 500;
+    cursor: pointer; transition: opacity .15s; margin-top: 14px;
+  }
+  .analyze-btn:hover { opacity: .85; }
+  .analyze-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  .result-label { font-size: 12px; color: #888; margin: 20px 0 10px; letter-spacing: .04em; }
+
+  .dcard { background: #fff; border-radius: 12px; border: 1px solid #e8e6e0; padding: 18px; margin-bottom: 12px; }
+  .dcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .dcard-title { font-size: 15px; font-weight: 500; line-height: 1.4; }
+  .rank-badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 12px; white-space: nowrap; flex-shrink: 0; }
+  .rank-high { background: #FAECE7; color: #993C1D; }
+  .rank-mid  { background: #FAEEDA; color: #854F0B; }
+  .rank-low  { background: #f0ede6; color: #666; }
+
+  .axes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .axis-item { flex: 1; min-width: 90px; }
+  .axis-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .bar-bg { height: 6px; border-radius: 3px; background: #f0ede6; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+  .bar-severity { background: #D85A30; }
+  .bar-willingness { background: #185FA5; }
+  .bar-gap { background: #1D9E75; }
+  .axis-score { font-size: 11px; color: #888; margin-top: 2px; }
+
+  .evidence { font-size: 13px; color: #555; line-height: 1.7; border-left: 2px solid #e0ddd6; padding-left: 10px; margin-bottom: 10px; }
+  .action-hint { font-size: 12px; color: #666; padding: 8px 12px; border-radius: 8px; background: #f5f4f0; }
+
+  .summary-card { background: #1a1a18; color: #f5f4f0; border-radius: 12px; padding: 18px; margin-top: 8px; }
+  .summary-title { font-size: 11px; color: #888; margin-bottom: 8px; letter-spacing: .04em; }
+  .summary-text { font-size: 13px; line-height: 1.8; color: #e0ddd6; }
+
+  .loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+  .error { color: #993C1D; font-size: 13px; padding: 14px; border-radius: 8px; background: #FAECE7; margin-top: 12px; }
+
+  .hint { font-size: 12px; color: #aaa; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>建設業界 需要探索ツール</h1>
+  <p>Q&A・SNS・レビューから集めたテキスト、またはキーワードで需要をAI分析</p>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="tab-row">
+      <button class="tab active" onclick="switchTab('text', this)">テキスト貼り付け</button>
+      <button class="tab" onclick="switchTab('keyword', this)">キーワード検索</button>
+    </div>
+
+    <div id="tab-text">
+      <textarea id="raw-text" placeholder="Yahoo!知恵袋の質問文、Xの投稿、アプリレビューなど収集したテキストをここに貼り付けてください。複数まとめてOKです。"></textarea>
+    </div>
+
+    <div id="tab-keyword" style="display:none">
+      <input class="kw-input" id="kw-input" placeholder="例：施工管理 写真整理" />
+      <div class="chips" id="preset-chips"></div>
+      <p class="hint">キーワードモード：そのテーマで想定されるペインをAIが推定分析します</p>
+    </div>
+
+    <button class="analyze-btn" id="analyze-btn" onclick="analyze()">需要を分析する</button>
+  </div>
+
+  <div id="result-area"></div>
+</div>
+
+<script>
+const GAS_URL = 'ここにGASのURLを貼る';
+
+const presets = ['施工管理 日報','写真管理 現場','見積 Excel','工程表 共有','下請け 請求書','安全書類 作成','図面 バージョン','職人 採用','材料 発注 ミス','工事完了 報告'];
+
+const chipEl = document.getElementById('preset-chips');
+presets.forEach(p => {
+  const c = document.createElement('button');
+  c.className = 'chip';
+  c.textContent = p;
+  c.onclick = () => { document.getElementById('kw-input').value = p; };
+  chipEl.appendChild(c);
+});
+
+let currentTab = 'text';
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-text').style.display = tab === 'text' ? '' : 'none';
+  document.getElementById('tab-keyword').style.display = tab === 'keyword' ? '' : 'none';
+}
+
+function getInput() {
+  return currentTab === 'text'
+    ? document.getElementById('raw-text').value.trim()
+    : document.getElementById('kw-input').value.trim();
+}
+
+async function analyze() {
+  const input = getInput();
+  if (!input) { alert('テキストまたはキーワードを入力してください'); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.textContent = '分析中...';
+  document.getElementById('result-area').innerHTML = '<div class="loading">AIが建設業界の文脈で分析しています...</div>';
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ mode: currentTab, input })
+    });
+    const data = await res.json();
+    renderResult(data);
+  } catch(e) {
+    document.getElementById('result-area').innerHTML = `<div class="error">エラーが発生しました：${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '需要を分析する';
+}
+
+function rankLabel(score) {
+  if (score >= 75) return { text: '需要 高', cls: 'rank-high' };
+  if (score >= 50) return { text: '需要 中', cls: 'rank-mid' };
+  return { text: '需要 低', cls: 'rank-low' };
+}
+
+function renderResult(data) {
+  const avg = d => Math.round((d.severity + d.willingness_to_pay + d.competition_gap) / 3);
+  let html = `<p class="result-label">分析結果 — 建設業界ペイン ${data.demands.length}件</p>`;
+
+  data.demands.forEach((d, i) => {
+    const score = avg(d);
+    const rank = rankLabel(score);
+    html += `
+    <div class="dcard">
+      <div class="dcard-top">
+        <div class="dcard-title">${i+1}. ${d.title}</div>
+        <span class="rank-badge ${rank.cls}">${rank.text}</span>
+      </div>
+      <div class="axes">
+        <div class="axis-item">
+          <div class="axis-label">課題の深刻度</div>
+          <div class="bar-bg"><div class="bar-fill bar-severity" style="width:${d.severity}%"></div></div>
+          <div class="axis-score">${d.severity}/100</div>
+        </div>
+        <div class="axis-item">
+          <div class="axis-label">支払い意欲</div>
+          <div class="bar-bg"><div class="bar-fill bar-willingness" style="width:${d.willingness_to_pay}%"></div></div>
+          <div class="axis-score">${d.willingness_to_pay}/100</div>
+        </div>
+        <div class="axis-item">
+          <div class="axis-label">競合空白</div>
+          <div class="bar-bg"><div class="bar-fill bar-gap" style="width:${d.competition_gap}%"></div></div>
+          <div class="axis-score">${d.competition_gap}/100</div>
+        </div>
+      </div>
+      <div class="evidence">${d.evidence}</div>
+      <div class="action-hint">💡 ${d.action}</div>
+    </div>`;
+  });
+
+  html += `
+  <div class="summary-card">
+    <div class="summary-title">需要サマリー</div>
+    <div class="summary-text">${data.summary}</div>
+  </div>`;
+
+  document.getElementById('result-area').innerHTML = html;
+}
+</script>
+</body>
+</html>
